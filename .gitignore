@@ -1,0 +1,24 @@
+# Ortam ve gizli bilgiler
+.env
+.env.*
+!.env.example
+
+# Veritabanı ve kullanıcı dosyaları
+backend/database/*
+!backend/database/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/dist/
+*.log
+.DS_Store

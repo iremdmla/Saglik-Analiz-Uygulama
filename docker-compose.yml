@@ -1,0 +1,56 @@
+# Tek komutla çalıştırma:  docker compose up --build   (.env dosyası isteğe bağlıdır)
+# Uygulama adresi:          http://localhost:8080
+services:
+  backend:
+    build:
+      context: ./backend
+      args:
+        INSTALL_OCR: "${INSTALL_OCR:-true}"
+    container_name: healthtrack-backend
+    # Varsayılan demo değerleri aşağıdadır; .env dosyası varsa oradaki değerler kullanılır.
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-demo}
+      JWT_SECRET: ${JWT_SECRET:-demo-only-secret-change-in-production-0123456789}
+      ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-15}
+      REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-7}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-strict}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@healthtrack.local}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin.Demo2026}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-Demo.User2026}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      DATABASE_URL: sqlite:////app/database/app.db
+      UPLOAD_DIR: /app/database/uploads
+      BACKUP_DIR: /app/database/backups
+    volumes:
+      - healthtrack-data:/app/database   # SQLite + yüklenen raporlar kalıcı olarak saklanır
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Backend dışarıya açılmaz; yalnızca frontend (nginx) üzerinden erişilir.
+
+  frontend:
+    build: ./frontend
+    container_name: healthtrack-frontend
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  healthtrack-data:
