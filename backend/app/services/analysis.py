@@ -93,6 +93,9 @@ def analyze(measurements: list[HealthMeasurement], profile: HealthProfile | None
                 "trend": trend, "slope_per_30_days": slope_30d,
                 "ref_min": ref_min, "ref_max": ref_max, "status": status,
                 "count": int(len(g)), "notes": notes,
+                # Grafikler için aynı birimdeki son 24 ölçüm (gerçek veri)
+                "history": [{"date": d.date().isoformat(), "value": float(v)}
+                            for d, v in zip(same["date"].tail(24), same["value"].tail(24))],
             })
 
     abnormal = [i for i in items if i["status"] in ("low", "high")]

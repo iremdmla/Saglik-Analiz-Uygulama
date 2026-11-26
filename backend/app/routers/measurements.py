@@ -1,7 +1,7 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from .. import audit
@@ -84,11 +84,12 @@ def history(type_id: int, user: User = Depends(get_current_user), db: Session = 
     return [measurement_out(m) for m in rows]
 
 
-@router.get("/dates", response_model=list[date])
+@router.get("/dates")
 def measurement_dates(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    rows = db.query(HealthMeasurement.measured_at).filter_by(user_id=user.id).distinct() \
-        .order_by(HealthMeasurement.measured_at.desc()).all()
-    return [r[0] for r in rows]
+    """Ölçüm yapılan tarihler ve o tarihteki ölçüm sayısı (karşılaştırma için)."""
+    rows = db.query(HealthMeasurement.measured_at, func.count()).filter_by(user_id=user.id) \
+        .group_by(HealthMeasurement.measured_at).order_by(HealthMeasurement.measured_at.desc()).all()
+    return [{"date": d, "count": c} for d, c in rows]
 
 
 @router.get("/compare")

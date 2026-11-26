@@ -12,13 +12,14 @@ HealthTrack AI; kan tahlilleri, vitamin değerleri, tansiyon, kilo, uyku ve fizi
 2. [Demo Hesapları](#-demo-hesapları)
 3. [Özellikler](#-özellikler)
 4. [Ekran Görüntüleri](#-ekran-görüntüleri)
-5. [Kullanılan Teknolojiler](#-kullanılan-teknolojiler)
-6. [Mimari ve Veritabanı](#-mimari-ve-veritabanı)
-7. [Güvenlik](#-güvenlik)
-8. [Analiz ve Yapay Zekâ](#-analiz-ve-yapay-zekâ)
-9. [Docker Komutları ve Yönetim](#-docker-komutları-ve-yönetim)
-10. [Testler](#-testler)
-11. [Gelecek Çalışmalar](#-gelecek-çalışmalar)
+5. [Tasarım Sistemi](#-tasarım-sistemi)
+6. [Kullanılan Teknolojiler](#-kullanılan-teknolojiler)
+7. [Mimari ve Veritabanı](#-mimari-ve-veritabanı)
+8. [Güvenlik](#-güvenlik)
+9. [Analiz ve Yapay Zekâ](#-analiz-ve-yapay-zekâ)
+10. [Docker Komutları ve Yönetim](#-docker-komutları-ve-yönetim)
+11. [Testler](#-testler)
+12. [Gelecek Çalışmalar](#-gelecek-çalışmalar)
 
 ---
 
@@ -98,8 +99,8 @@ Her kullanıcıda 4 farklı tarihte laboratuvar sonuçları (hemogram, biyokimya
 - Yönetici rolü, kullanıcıların sağlık **değerlerine** otomatik erişim sağlamaz; yalnızca hesap bilgileri ve sayısal özetler gösterilir.
 
 ### Arayüz
-- Sağlık teknolojisi odaklı, merkezi olarak yönetilen tasarım sistemi (renkler, tipografi, kartlar, bileşenler).
-- Daraltılabilir sidebar, mobilde açılır menü, geri/ileri navigasyon butonları.
+- Sağlık teknolojisi odaklı, merkezi olarak yönetilen tasarım sistemi (ayrıntılar aşağıda).
+- Özgün logo, daraltılabilir lacivert sidebar, kullanıcı profil alanı ve tema anahtarı; mobilde açılır menü; geri/ileri navigasyon butonları.
 - Mobil, tablet ve masaüstü uyumlu responsive tasarım.
 - Yüklenme, hata, boş durum ve başarılı işlem bildirimleri.
 
@@ -110,14 +111,48 @@ Her kullanıcıda 4 farklı tarihte laboratuvar sonuçları (hemogram, biyokimya
 | Giriş | Dashboard |
 |---|---|
 | ![Giriş](docs/screenshots/01-giris.jpg) | ![Dashboard](docs/screenshots/02-dashboard.jpg) |
-| **Ölçümler ve grafik** | **Rapor inceleme ve onay** |
-| ![Ölçümler](docs/screenshots/03-olcumler.jpg) | ![Rapor onay](docs/screenshots/04-rapor-onay.jpg) |
+| **Dashboard – koyu tema** | **Ölçümler ve trend grafiği** |
+| ![Dashboard koyu](docs/screenshots/10-dashboard-koyu.jpg) | ![Ölçümler](docs/screenshots/03-olcumler.jpg) |
+| **Sağlık verileri** | **Rapor inceleme ve onay** |
+| ![Sağlık verileri](docs/screenshots/06-saglik-verileri.jpg) | ![Rapor onay](docs/screenshots/05-rapor-onay.jpg) |
 | **Analizler** | **Yapay zekâ asistanı** |
-| ![Analiz](docs/screenshots/05-analiz.jpg) | ![Asistan](docs/screenshots/06-asistan.jpg) |
-| **Yönetici dashboard (koyu tema)** | **Sistem logları** |
-| ![Yönetici](docs/screenshots/07-yonetici-dashboard.jpg) | ![Loglar](docs/screenshots/08-sistem-loglari.jpg) |
+| ![Analiz](docs/screenshots/07-analiz.jpg) | ![Asistan](docs/screenshots/08-asistan.jpg) |
+| **Sağlık profili** | **Yönetici dashboard** |
+| ![Profil](docs/screenshots/09-profil.jpg) | ![Yönetici](docs/screenshots/11-yonetici-dashboard.jpg) |
+| **Sistem logları** | **Mobil görünüm** |
+| ![Loglar](docs/screenshots/13-sistem-loglari.jpg) | <img src="docs/screenshots/15-mobil.jpg" alt="Mobil" width="260"> |
 
-<p align="center"><img src="docs/screenshots/09-mobil.jpg" alt="Mobil görünüm" width="260"></p>
+---
+
+## 🎨 Tasarım Sistemi
+
+Arayüz, modern sağlık platformlarından ilham alan özgün bir görsel kimlikle tasarlanmıştır. Tüm renkler, gradientler, tipografi ve bileşen stilleri `frontend/src/theme.ts` dosyasında merkezi olarak tanımlanır; ekranlar ortak bileşenlerden (`frontend/src/components/common.tsx`) oluşur.
+
+**Renk rolleri** – her rengin tek ve tutarlı bir anlamı vardır:
+
+| Renk | Kullanım amacı |
+|---|---|
+| 🟢 Turkuaz / teal | Marka rengi, birincil butonlar, aktif menü |
+| 🔵 Derin lacivert | Sidebar, koyu yüzeyler, başlıklar (güven ve derinlik) |
+| 🔷 Mavi | Bilgi, biyokimya göstergeleri, ikincil veri serileri |
+| 🟣 Mor / lavanta | Yapay zekâ asistanı, analiz ve içgörüler, tiroid |
+| ✅ Yeşil | "Normal" durum, referans aralığı bantları |
+| 🟠 Amber | "Düşük" durum, dikkat, vitaminler, raporlar |
+| 🔴 Mercan | "Yüksek" durum, uyarılar, hemogram |
+| 🩷 Pembe | Vital bulgular (tansiyon, nabız) |
+
+Her ölçüm kategorisinin sabit bir rengi ve ikonu vardır; aynı gösterge dashboard'da, listelerde ve grafiklerde aynı renkle görünür.
+
+**Veri görselleştirme bileşenleri** (tamamı gerçek kullanıcı verisiyle çalışır):
+- **Referans uyumu halkası:** son ölçümde referans aralığında olan göstergelerin oranı.
+- **Referans konum çubuğu:** değerin referans aralığına göre konumu (yeşil bölge = normal aralık).
+- **Sparkline'lar:** her göstergenin ölçüm geçmişinin mini trend çizgisi.
+- **Gradient alan grafikleri:** referans bandı, durum renkli noktalar ve dönem filtresi (3A / 6A / 1Y / Tümü).
+- **Karşılaştırmalı grafikler:** iki tarih arasındaki yüzde değişim çubukları, aylık tansiyon ile aktivite ve uyku grafikleri.
+
+**Temalar:** Açık tema ferah, renkli bir zemin kullanır; koyu tema derin lacivert yüzeyler ve renk vurgularıyla premium bir görünüm sunar. Sidebar her iki temada da lacivert kalarak içerikten net biçimde ayrılır. Tercih tarayıcıda hatırlanır.
+
+**Etkileşim:** Sayfa geçişlerinde yumuşak animasyonlar, kart ve butonlarda hover efektleri, ikonlu modal başlıkları, iskelet yükleme ekranları, açıklayıcı boş durum ekranları ve bildirimler. Hareket azaltma tercihi olan kullanıcılar için animasyonlar otomatik kapatılır.
 
 ---
 

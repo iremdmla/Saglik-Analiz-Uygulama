@@ -1,9 +1,11 @@
-import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Outlined";
-import SearchIcon from "@mui/icons-material/Search";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
+import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Rounded";
+import SearchIcon from "@mui/icons-material/SearchRounded";
+import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityRounded";
 import {
-  Alert, Avatar, Box, Button, Card, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider,
-  Drawer, IconButton, InputAdornment, MenuItem, Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead,
+  Alert, alpha, Avatar, Box, Button, Card, Chip, CircularProgress, Dialog, DialogActions, DialogContent, Divider,
+  Drawer, InputAdornment, MenuItem, Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TextField, Tooltip, Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -12,9 +14,15 @@ import type { AuditLog, Page, User } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { useNotify } from "../../components/AppProviders";
 import {
-  ConfirmDialog, DemoChip, EmptyState, ErrorState, errorMessage, fmtDate, fmtDateTime, LoadingState, PageHeader, Pager, useAsync,
+  ConfirmDialog, DemoChip, DialogHeader, EmptyState, ErrorState, errorMessage, fmtDate, fmtDateTime, IconTile, initials, LoadingState,
+  PageHeader, Pager, useAsync,
 } from "../../components/common";
-import { ACTION_LABELS } from "./AdminLogs";
+import { gradients, palette } from "../../theme";
+import { actionMeta } from "./AdminLogs";
+
+const RoleChip = ({ admin }: { admin: boolean }) => (
+  <Chip size="small" label={admin ? "Yönetici" : "Kullanıcı"} sx={{ bgcolor: alpha(admin ? palette.violet : palette.teal, 0.12), color: admin ? palette.violet : palette.teal }} />
+);
 
 type Detail = { user: User; has_profile: boolean; record_count: number; measurement_count: number; document_count: number; recent_activity: AuditLog[] };
 
@@ -22,38 +30,56 @@ function UserDrawer({ id, onClose }: { id: number | null; onClose: () => void })
   const detail = useAsync(() => (id ? api<Detail>(`/admin/users/${id}`) : Promise.resolve(null)), [id]);
   const d = detail.data;
   return (
-    <Drawer anchor="right" open={!!id} onClose={onClose} PaperProps={{ sx: { width: { xs: "100%", sm: 420 }, p: 3 } }}>
-      {detail.loading || !d ? <LoadingState rows={5} /> : (
+    <Drawer anchor="right" open={!!id} onClose={onClose} PaperProps={{ sx: { width: { xs: "100%", sm: 440 }, bgcolor: "background.default" } }}>
+      {detail.loading || !d ? <Box p={3}><LoadingState rows={5} /></Box> : (
         <Stack spacing={2.5}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar sx={{ width: 56, height: 56, bgcolor: "primary.main" }}>{d.user.full_name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</Avatar>
-            <Box minWidth={0}>
-              <Typography variant="h6">{d.user.full_name}</Typography>
-              <Typography color="text.secondary" noWrap>{d.user.email}</Typography>
-            </Box>
+          <Box sx={{ p: 3, pb: 4, color: "#fff", background: gradients.hero, position: "relative", overflow: "hidden" }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar sx={{ width: 64, height: 64, fontWeight: 800, fontSize: 22, background: gradients.aurora, border: `3px solid ${alpha("#fff", 0.3)}` }}>{initials(d.user.full_name)}</Avatar>
+              <Box minWidth={0}>
+                <Typography variant="h6">{d.user.full_name}</Typography>
+                <Typography sx={{ opacity: 0.8 }} noWrap>{d.user.email}</Typography>
+                <Stack direction="row" spacing={1} mt={1}>
+                  <Chip size="small" label={d.user.role === "ADMIN" ? "Yönetici" : "Kullanıcı"} sx={{ bgcolor: alpha("#fff", 0.18), color: "#fff" }} />
+                  <Chip size="small" label={d.user.is_active ? "Aktif" : "Pasif"} sx={{ bgcolor: d.user.is_active ? alpha(palette.green, 0.35) : alpha("#fff", 0.15), color: "#fff" }} />
+                </Stack>
+              </Box>
+            </Stack>
+          </Box>
+          <Box px={3}>
+          <Box display="grid" gridTemplateColumns="1fr 1fr 1fr" gap={1.25} mb={2}>
+            {[["Kayıt", d.record_count, palette.blue], ["Ölçüm", d.measurement_count, palette.pink], ["Rapor", d.document_count, palette.amber]].map(([k, v, c]) => (
+              <Box key={k as string} sx={{ p: 1.5, borderRadius: 3.5, bgcolor: alpha(c as string, 0.1), textAlign: "center" }}>
+                <Typography variant="h5" sx={{ color: c as string }}>{v}</Typography><Typography variant="caption" color="text.secondary">{k}</Typography>
+              </Box>
+            ))}
+          </Box>
+          <Stack spacing={1}>
+          {[["Kayıt tarihi", fmtDateTime(d.user.created_at)], ["Son giriş", fmtDateTime(d.user.last_login_at)], ["Sağlık profili", d.has_profile ? "Var" : "Yok"]].map(([k, v]) => (
+            <Stack key={k as string} direction="row" justifyContent="space-between" sx={{ p: 1.25, borderRadius: 3, bgcolor: "background.paper", border: 1, borderColor: "divider" }}>
+              <Typography color="text.secondary">{k}</Typography><Typography fontWeight={700}>{v}</Typography></Stack>
+          ))}
           </Stack>
-          <Stack direction="row" spacing={1}>
-            <Chip size="small" label={d.user.role === "ADMIN" ? "Yönetici" : "Kullanıcı"} color={d.user.role === "ADMIN" ? "secondary" : "primary"} />
-            <Chip size="small" label={d.user.is_active ? "Aktif" : "Pasif"} color={d.user.is_active ? "success" : "default"} variant="outlined" />
-            {d.user.is_demo && <DemoChip />}
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ my: 2, p: 1.5, borderRadius: 3.5, bgcolor: alpha(palette.violet, 0.08) }}>
+            <ShieldRoundedIcon sx={{ color: palette.violet }} />
+            <Typography variant="body2" color="text.secondary">Gizlilik gereği yönetici ekranında sağlık değerleri gösterilmez.</Typography>
           </Stack>
           <Divider />
-          {[["Kayıt tarihi", fmtDateTime(d.user.created_at)], ["Son giriş", fmtDateTime(d.user.last_login_at)],
-            ["Sağlık profili", d.has_profile ? "Var" : "Yok"], ["Sağlık kaydı sayısı", d.record_count], ["Ölçüm sayısı", d.measurement_count],
-            ["Yüklenen rapor", d.document_count]].map(([k, v]) => (
-            <Stack key={k as string} direction="row" justifyContent="space-between"><Typography color="text.secondary">{k}</Typography><Typography fontWeight={600}>{v}</Typography></Stack>
-          ))}
-          <Alert severity="info" variant="outlined">Gizlilik gereği yönetici ekranında sağlık değerleri gösterilmez.</Alert>
-          <Typography variant="subtitle2">Son aktiviteler</Typography>
-          <Stack spacing={1}>
-            {d.recent_activity.map((l) => (
-              <Stack key={l.id} direction="row" justifyContent="space-between" spacing={1}>
-                <Typography variant="body2">{ACTION_LABELS[l.action] ?? l.action}{!l.success && " (başarısız)"}</Typography>
-                <Typography variant="caption" color="text.secondary" whiteSpace="nowrap">{fmtDateTime(l.created_at)}</Typography>
-              </Stack>
-            ))}
+          <Typography variant="overline" color="text.secondary" display="block" mt={1.5}>Son aktiviteler</Typography>
+          <Stack spacing={1} pb={3}>
+            {d.recent_activity.map((l) => {
+              const m = actionMeta(l.action);
+              return (
+                <Stack key={l.id} direction="row" spacing={1.25} alignItems="center">
+                  <IconTile icon={m.icon} color={l.success ? m.color : palette.coral} size={30} />
+                  <Typography variant="body2" fontWeight={600} flex={1}>{m.label}{!l.success && " (başarısız)"}</Typography>
+                  <Typography variant="caption" color="text.secondary" whiteSpace="nowrap">{fmtDateTime(l.created_at)}</Typography>
+                </Stack>
+              );
+            })}
             {!d.recent_activity.length && <Typography variant="body2" color="text.secondary">Aktivite yok.</Typography>}
           </Stack>
+          </Box>
         </Stack>
       )}
     </Drawer>
@@ -78,9 +104,9 @@ function CreateUserDialog({ open, onClose, onCreated }: { open: boolean; onClose
   };
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Yeni kullanıcı oluştur</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2}>
+      <DialogHeader icon={<PersonAddAlt1OutlinedIcon />} color={palette.blue} title="Yeni kullanıcı oluştur" subtitle="Hesap geçici şifreyle oluşturulur" />
+      <DialogContent>
+        <Stack spacing={2} pt={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
           <TextField label="Ad Soyad" value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} required />
           <TextField label="E-posta" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required />
@@ -90,7 +116,7 @@ function CreateUserDialog({ open, onClose, onCreated }: { open: boolean; onClose
           </TextField>
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions sx={{ px: 3, py: 2.5, borderTop: 1, borderColor: "divider" }}>
         <Button onClick={onClose}>Vazgeç</Button>
         <Button variant="contained" onClick={save} disabled={busy}>{busy ? <CircularProgress size={18} color="inherit" /> : "Oluştur"}</Button>
       </DialogActions>
@@ -134,9 +160,10 @@ export default function AdminUsers() {
 
   return (
     <>
-      <PageHeader title="Kullanıcı Yönetimi" subtitle="Hesapları görüntüleyin, arayın ve gerektiğinde pasif hâle getirin."
+      <PageHeader title="Kullanıcı Yönetimi" eyebrow="Yönetim" subtitle="Hesapları görüntüleyin, arayın ve gerektiğinde pasif hâle getirin."
+        icon={<PeopleAltRoundedIcon />} color={palette.blue}
         action={<Button variant="contained" startIcon={<PersonAddAlt1OutlinedIcon />} onClick={() => setCreating(true)}>Kullanıcı ekle</Button>} />
-      <Card sx={{ p: 2, mb: 2 }}>
+      <Card sx={{ p: 2.5, mb: 2.5 }}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <TextField placeholder="Ad, e-posta veya kullanıcı adı ara..." value={q} onChange={(e) => setQ(e.target.value)}
             slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }} />
@@ -161,8 +188,8 @@ export default function AdminUsers() {
                       <TableRow key={u.id} hover>
                         <TableCell>
                           <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Avatar sx={{ width: 36, height: 36, fontSize: 14, bgcolor: u.role === "ADMIN" ? "secondary.main" : "primary.main" }}>
-                              {u.full_name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                            <Avatar sx={{ width: 40, height: 40, fontSize: 14, fontWeight: 800, background: u.role === "ADMIN" ? gradients.violet : gradients.brand }}>
+                              {initials(u.full_name)}
                             </Avatar>
                             <Box minWidth={0}>
                               <Stack direction="row" spacing={1} alignItems="center"><Typography fontWeight={600}>{u.full_name}</Typography>{u.is_demo && <DemoChip />}</Stack>
@@ -170,7 +197,7 @@ export default function AdminUsers() {
                             </Box>
                           </Stack>
                         </TableCell>
-                        <TableCell><Chip size="small" label={u.role === "ADMIN" ? "Yönetici" : "Kullanıcı"} color={u.role === "ADMIN" ? "secondary" : "primary"} variant="outlined" /></TableCell>
+                        <TableCell><RoleChip admin={u.role === "ADMIN"} /></TableCell>
                         <TableCell>{fmtDate(u.created_at)}</TableCell>
                         <TableCell>{fmtDateTime(u.last_login_at)}</TableCell>
                         <TableCell>
@@ -179,7 +206,7 @@ export default function AdminUsers() {
                           </Tooltip>
                         </TableCell>
                         <TableCell align="right">
-                          <Tooltip title="Detaylar"><IconButton onClick={() => setDetailId(u.id)}><VisibilityOutlinedIcon /></IconButton></Tooltip>
+                          <Button size="small" variant="outlined" startIcon={<VisibilityOutlinedIcon />} onClick={() => setDetailId(u.id)}>Detay</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -192,7 +219,7 @@ export default function AdminUsers() {
       </Card>
       <UserDrawer id={detailId} onClose={() => setDetailId(null)} />
       <CreateUserDialog open={creating} onClose={() => setCreating(false)} onCreated={() => { setCreating(false); notify("Kullanıcı oluşturuldu."); list.reload(); }} />
-      <ConfirmDialog open={!!toggle} busy={busy} onCancel={() => setToggle(null)} onConfirm={applyToggle}
+      <ConfirmDialog open={!!toggle} busy={busy} tone={toggle?.is_active ? "danger" : "primary"} onCancel={() => setToggle(null)} onConfirm={applyToggle}
         title={toggle?.is_active ? "Hesabı pasif yap" : "Hesabı aktif yap"} confirmText={toggle?.is_active ? "Pasif yap" : "Aktif yap"}
         message={toggle?.is_active ? `${toggle?.full_name} artık giriş yapamayacak ve açık oturumları sonlandırılacak.` : `${toggle?.full_name} yeniden giriş yapabilecek.`} />
     </>

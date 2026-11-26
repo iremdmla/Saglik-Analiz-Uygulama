@@ -1,14 +1,17 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import {
-  Alert, Autocomplete, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton,
+  Alert, Autocomplete, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, IconButton,
   MenuItem, Stack, TextField, Typography, useMediaQuery, useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { HealthRecord, Measurement, MeasurementInput, MeasurementType } from "../api/types";
-import { errorMessage, today } from "./common";
+import FolderSharedRoundedIcon from "@mui/icons-material/FolderSharedRounded";
+import MonitorHeartRoundedIcon from "@mui/icons-material/MonitorHeartRounded";
+import { palette } from "../theme";
+import { DialogHeader, errorMessage, today } from "./common";
 
 let typeCache: MeasurementType[] | null = null;
 
@@ -93,9 +96,10 @@ export function RecordDialog({ open, record, onClose, onSaved }: {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={fullScreen}>
-      <DialogTitle>{record ? "Sağlık kaydını düzenle" : "Yeni sağlık kaydı"}</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2}>
+      <DialogHeader icon={<FolderSharedRoundedIcon />} color={palette.blue} title={record ? "Sağlık kaydını düzenle" : "Yeni sağlık kaydı"}
+        subtitle="Bir tahlil veya ölçüm oturumunu birden fazla değerle kaydedin" />
+      <DialogContent>
+        <Stack spacing={2} pt={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -121,7 +125,7 @@ export function RecordDialog({ open, record, onClose, onSaved }: {
               <TextField label="Açıklama" value={head.notes} onChange={(e) => setHead({ ...head, notes: e.target.value })} slotProps={{ htmlInput: { maxLength: 2000 } }} />
             </Grid>
           </Grid>
-          <Typography variant="subtitle2" pt={1}>Ölçümler</Typography>
+          <Typography variant="overline" color="text.secondary" pt={1}>Ölçümler</Typography>
           {rows.map((r, i) => (
             <Grid container spacing={1.5} key={i} alignItems="center">
               <Grid size={{ xs: 12, sm: 4.5 }}>
@@ -147,13 +151,13 @@ export function RecordDialog({ open, record, onClose, onSaved }: {
               </Grid>
             </Grid>
           ))}
-          <Box><Button startIcon={<AddIcon />} onClick={() => setRows([...rows, emptyRow()])}>Ölçüm satırı ekle</Button></Box>
+          <Box><Button variant="outlined" startIcon={<AddIcon />} onClick={() => setRows([...rows, emptyRow()])} sx={{ borderStyle: "dashed" }}>Ölçüm satırı ekle</Button></Box>
           <Typography variant="caption" color="text.secondary">
             Referans aralığı laboratuvar raporunuzdaki değerlerle değiştirilebilir. Boş bırakılırsa genel erişkin aralığı kullanılır.
           </Typography>
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions sx={{ px: 3, py: 2.5, borderTop: 1, borderColor: "divider" }}>
         <Button onClick={onClose}>Vazgeç</Button>
         <Button variant="contained" onClick={save} disabled={busy}>{busy ? <CircularProgress size={18} color="inherit" /> : "Kaydet"}</Button>
       </DialogActions>
@@ -202,8 +206,9 @@ export function MeasurementDialog({ open, measurement, defaultTypeId, onClose, o
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{measurement ? "Ölçümü düzenle" : "Yeni ölçüm"}</DialogTitle>
-      <DialogContent dividers>
+      <DialogHeader icon={<MonitorHeartRoundedIcon />} color={palette.pink} title={measurement ? "Ölçümü düzenle" : "Yeni ölçüm"}
+        subtitle="Tek bir değeri tarih ve referans aralığıyla ekleyin" />
+      <DialogContent sx={{ pt: "20px !important" }}>
         <Stack spacing={2}>
           {error && <Alert severity="error">{error}</Alert>}
           <TypePicker types={types} value={row.type}
@@ -226,7 +231,7 @@ export function MeasurementDialog({ open, measurement, defaultTypeId, onClose, o
           <TextField label="Açıklama" value={note} onChange={(e) => setNote(e.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 500 } }} />
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions sx={{ px: 3, py: 2.5, borderTop: 1, borderColor: "divider" }}>
         <Button onClick={onClose}>Vazgeç</Button>
         <Button variant="contained" onClick={save} disabled={busy}>{busy ? <CircularProgress size={18} color="inherit" /> : "Kaydet"}</Button>
       </DialogActions>

@@ -1,4 +1,5 @@
-import { Box, CircularProgress } from "@mui/material";
+import { Box, LinearProgress, Stack } from "@mui/material";
+import { LogoMark } from "./components/Logo";
 import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
@@ -22,7 +23,16 @@ import Settings from "./pages/Settings";
 function Protected({ children, admin }: { children: ReactNode; admin?: boolean }) {
   const { user, ready } = useAuth();
   if (!ready) {
-    return <Box minHeight="100vh" display="grid" sx={{ placeItems: "center" }}><CircularProgress /></Box>;
+    return (
+      <Box minHeight="100vh" display="grid" sx={{ placeItems: "center" }}>
+        <Stack alignItems="center" spacing={2} sx={{ animation: "fadeUp .4s ease" }}>
+          <Box sx={{ animation: "pulse 1.4s ease-in-out infinite", "@keyframes pulse": { "0%,100%": { transform: "scale(1)" }, "50%": { transform: "scale(1.08)" } } }}>
+            <LogoMark size={64} />
+          </Box>
+          <LinearProgress sx={{ width: 140 }} />
+        </Stack>
+      </Box>
+    );
   }
   if (!user) return <Navigate to="/login" replace />;
   if (admin && user.role !== "ADMIN") return <Navigate to="/" replace />;

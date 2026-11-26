@@ -108,6 +108,7 @@ export interface AnalysisItem {
   status: Status;
   count: number;
   notes: string[];
+  history: { date: string; value: number }[];
 }
 
 export interface AnalysisResult {

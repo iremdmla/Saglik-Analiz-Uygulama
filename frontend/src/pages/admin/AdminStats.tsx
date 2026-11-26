@@ -1,67 +1,76 @@
-import { Box, Chip, LinearProgress, Stack, Typography, useTheme } from "@mui/material";
+import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
+import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
+import DataUsageRoundedIcon from "@mui/icons-material/DataUsageRounded";
+import ScienceRoundedIcon from "@mui/icons-material/ScienceRounded";
+import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
+import { alpha, Chip, LinearProgress, Stack, Typography, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../../api/client";
 import type { User } from "../../api/types";
 import { ErrorState, LoadingState, PageHeader, SectionCard, useAsync } from "../../components/common";
-import { tokens } from "../../theme";
+import { useChartTooltip } from "../../components/TrendChart";
+import { colorFor, palette } from "../../theme";
 import { ActivityChart, type AdminStatsT } from "./AdminDashboard";
-import { ACTION_LABELS } from "./AdminLogs";
+import { actionMeta } from "./AdminLogs";
 
 type Demo = { environment: string; seed_enabled: boolean; demo_users: User[]; demo_records: number; demo_measurements: number; demo_documents: number; demo_logs: number };
 
 export default function AdminStats() {
   const theme = useTheme();
+  const tip = useChartTooltip();
   const stats = useAsync(() => api<AdminStatsT>("/admin/stats"), []);
   const demo = useAsync(() => api<Demo>("/admin/demo"), []);
   if (stats.loading) return <LoadingState rows={6} />;
   if (stats.error || !stats.data) return <ErrorState message={stats.error ?? ""} onRetry={stats.reload} />;
   const s = stats.data;
-  const tip = { contentStyle: { background: theme.palette.background.paper, border: `1px solid ${theme.palette.divider}`, borderRadius: 10 } };
-  const actions = s.actions.slice(0, 10).map((a) => ({ ...a, label: ACTION_LABELS[a.action] ?? a.action }));
+  const actions = s.actions.slice(0, 10).map((a) => ({ ...a, label: actionMeta(a.action).label, color: actionMeta(a.action).color }));
   const activeRatio = s.total_users ? Math.round((s.active_users / s.total_users) * 100) : 0;
 
   return (
     <>
-      <PageHeader title="Sistem İstatistikleri" subtitle="Kullanım, veri hacmi ve demo verisi durumu." />
+      <PageHeader title="Sistem İstatistikleri" eyebrow="Raporlama" subtitle="Kullanım, veri hacmi ve demo verisi durumu."
+        icon={<BarChartRoundedIcon />} color={palette.violet} />
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 7 }}>
-          <SectionCard title="İşlem türü dağılımı">
+          <SectionCard title="İşlem türü dağılımı" icon={<BarChartRoundedIcon />} color={palette.violet}>
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={actions} layout="vertical" margin={{ left: 40, right: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme.palette.divider} />
                 <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="label" width={120} tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
                 <Tooltip {...tip} cursor={{ fill: theme.palette.action.hover }} />
-                <Bar dataKey="count" name="Adet" fill={tokens.chart[1]} radius={[0, 6, 6, 0]} barSize={16} />
+                <Bar dataKey="count" name="Adet" radius={[0, 8, 8, 0]} barSize={16}>
+                  {actions.map((a) => <Cell key={a.action} fill={a.color} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </SectionCard>
         </Grid>
         <Grid size={{ xs: 12, lg: 5 }}>
-          <SectionCard title="Kayıt kategorileri">
+          <SectionCard title="Kayıt kategorileri" icon={<CategoryRoundedIcon />} color={palette.blue}>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
-                <Pie data={s.record_categories} dataKey="count" nameKey="category" innerRadius={60} outerRadius={95} paddingAngle={2}>
-                  {s.record_categories.map((_, i) => <Cell key={i} fill={tokens.chart[i % tokens.chart.length]} stroke="none" />)}
+                <Pie data={s.record_categories} dataKey="count" nameKey="category" innerRadius={62} outerRadius={95} paddingAngle={3} cornerRadius={6}>
+                  {s.record_categories.map((c) => <Cell key={c.category} fill={colorFor(c.category)} stroke="none" />)}
                 </Pie>
                 <Tooltip {...tip} />
               </PieChart>
             </ResponsiveContainer>
             <Stack direction="row" flexWrap="wrap" gap={1} justifyContent="center">
-              {s.record_categories.map((c, i) => (
-                <Chip key={c.category} size="small" variant="outlined" label={`${c.category}: ${c.count}`}
-                  icon={<Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: tokens.chart[i % tokens.chart.length], ml: "8px !important" }} />} />
+              {s.record_categories.map((c) => (
+                <Chip key={c.category} size="small" label={`${c.category}: ${c.count}`}
+                  sx={{ bgcolor: alpha(colorFor(c.category), 0.12), color: colorFor(c.category) }} />
               ))}
             </Stack>
           </SectionCard>
         </Grid>
         <Grid size={{ xs: 12, lg: 7 }}>
-          <SectionCard title="Günlük aktivite (14 gün)"><ActivityChart data={s.activity} /></SectionCard>
+          <SectionCard title="Günlük aktivite (14 gün)" icon={<ShowChartRoundedIcon />} color={palette.teal}><ActivityChart data={s.activity} /></SectionCard>
         </Grid>
         <Grid size={{ xs: 12, lg: 5 }}>
           <Stack spacing={2} height="100%">
-            <SectionCard title="Hesap durumu">
+            <SectionCard title="Hesap durumu" icon={<DataUsageRoundedIcon />} color={palette.green} fill={false}>
               <Typography variant="body2" color="text.secondary">Aktif hesap oranı</Typography>
               <Stack direction="row" alignItems="center" spacing={2} mt={1}>
                 <LinearProgress variant="determinate" value={activeRatio} sx={{ flex: 1, height: 10, borderRadius: 5 }} color="success" />
@@ -73,7 +82,7 @@ export default function AdminStats() {
                 ))}
               </Grid>
             </SectionCard>
-            <SectionCard title="Demo verisi durumu">
+            <SectionCard title="Demo verisi durumu" icon={<ScienceRoundedIcon />} color={palette.violet} fill={false}>
               {demo.data ? (
                 <Stack spacing={1}>
                   <Stack direction="row" spacing={1}>

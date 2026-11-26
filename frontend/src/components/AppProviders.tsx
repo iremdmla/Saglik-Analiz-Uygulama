@@ -46,7 +46,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           <Snackbar open={!!notice} autoHideDuration={4000} onClose={() => setNotice(null)}
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
             <Alert severity={notice?.severity ?? "info"} variant="filled" onClose={() => setNotice(null)}
-              sx={{ borderRadius: 2 }}>
+              sx={{ borderRadius: 4, fontWeight: 600, color: "#fff", boxShadow: "0 16px 40px rgba(11,21,51,0.3)", minWidth: 300 }}>
               {notice?.message}
             </Alert>
           </Snackbar>
